@@ -8,37 +8,119 @@
   <meta name="theme-color" content="#000000">
   <link rel="icon" href="GameSphere.jpg" type="image/jpeg">
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-          .then(reg => console.log('Service Worker zarejestrowany:', reg))
-          .catch(err => console.log('Błąd rejestracji Service Workera:', err));
-      });
-    }
-  </script>
-
-  <!-- Tutaj możesz dodać swoje style i skrypty -->
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
     h1 { color: #222; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
     th { background-color: #444; color: white; }
+    form { margin-top: 30px; }
+    input, button { padding: 8px; margin: 5px 0; }
+    .actions button { margin-right: 5px; }
   </style>
 </head>
 <body>
   <h1>GameSphere</h1>
   <p>Twoja baza gier na konsole - wersja PWA</p>
-  <table>
+
+  <table id="gamesTable">
     <thead>
-      <tr><th>Lp</th><th>Tytuł</th><th>Platforma</th><th>Rok</th></tr>
+      <tr><th>Lp</th><th>Tytuł</th><th>Platforma</th><th>Rok</th><th>Akcje</th></tr>
     </thead>
-    <tbody>
-      <tr><td>1</td><td>The Legend of Zelda: Breath of the Wild</td><td>Nintendo Switch</td><td>2017</td></tr>
-      <tr><td>2</td><td>God of War</td><td>PlayStation 4</td><td>2018</td></tr>
-      <tr><td>3</td><td>Halo Infinite</td><td>Xbox Series X</td><td>2021</td></tr>
-    </tbody>
+    <tbody id="gameList"></tbody>
   </table>
+
+  <h2 id="formTitle">Dodaj nową grę</h2>
+  <form id="gameForm">
+    <input type="text" id="title" placeholder="Tytuł" required><br>
+    <input type="text" id="platform" placeholder="Platforma" required><br>
+    <input type="number" id="year" placeholder="Rok" required><br>
+    <button type="submit">Zapisz</button>
+    <button type="button" id="cancelEdit" style="display: none;">Anuluj edycję</button>
+  </form>
+
+  <script>
+    const gameForm = document.getElementById('gameForm');
+    const gameList = document.getElementById('gameList');
+    const cancelEditBtn = document.getElementById('cancelEdit');
+    const formTitle = document.getElementById('formTitle');
+
+    let games = JSON.parse(localStorage.getItem('games')) || [
+      { title: "The Legend of Zelda: Breath of the Wild", platform: "Nintendo Switch", year: 2017 },
+      { title: "God of War", platform: "PlayStation 4", year: 2018 },
+      { title: "Halo Infinite", platform: "Xbox Series X", year: 2021 }
+    ];
+
+    let editIndex = null;
+
+    function renderGames() {
+      gameList.innerHTML = '';
+      games.forEach((game, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${game.title}</td>
+          <td>${game.platform}</td>
+          <td>${game.year}</td>
+          <td class="actions">
+            <button onclick="editGame(${index})">Edytuj</button>
+            <button onclick="deleteGame(${index})">Usuń</button>
+          </td>
+        `;
+        gameList.appendChild(row);
+      });
+      localStorage.setItem('games', JSON.stringify(games));
+    }
+
+    function editGame(index) {
+      const game = games[index];
+      document.getElementById('title').value = game.title;
+      document.getElementById('platform').value = game.platform;
+      document.getElementById('year').value = game.year;
+      editIndex = index;
+      formTitle.textContent = 'Edytuj grę';
+      cancelEditBtn.style.display = 'inline';
+    }
+
+    function deleteGame(index) {
+      if (confirm("Czy na pewno chcesz usunąć tę grę?")) {
+        games.splice(index, 1);
+        renderGames();
+      }
+    }
+
+    cancelEditBtn.addEventListener('click', () => {
+      gameForm.reset();
+      editIndex = null;
+      formTitle.textContent = 'Dodaj nową grę';
+      cancelEditBtn.style.display = 'none';
+    });
+
+    gameForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const platform = document.getElementById('platform').value;
+      const year = parseInt(document.getElementById('year').value);
+
+      if (editIndex !== null) {
+        games[editIndex] = { title, platform, year };
+        editIndex = null;
+        formTitle.textContent = 'Dodaj nową grę';
+        cancelEditBtn.style.display = 'none';
+      } else {
+        games.push({ title, platform, year });
+      }
+
+      gameForm.reset();
+      renderGames();
+    });
+
+    // Wyświetl na starcie
+    renderGames();
+
+    // Udostępnij edycję/usuwanie do globalnego zakresu
+    window.editGame = editGame;
+    window.deleteGame = deleteGame;
+  </script>
 </body>
 </html>
