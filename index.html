@@ -1,126 +1,66 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>GameSphere</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-  <link rel="icon" href="GameSphere.jpg" type="image/jpeg">
-
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
-    h1 { color: #222; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-    th { background-color: #444; color: white; }
-    form { margin-top: 30px; }
-    input, button { padding: 8px; margin: 5px 0; }
-    .actions button { margin-right: 5px; }
-  </style>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" href="GameSphere.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>GameSphere</h1>
-  <p>Twoja baza gier na konsole - wersja PWA</p>
+  <header>
+    <img src="GameSphere.jpg" alt="GameSphere Logo" class="logo" />
+    <h1>GameSphere</h1>
+    <p>Twoja baza gier na konsole</p>
+    <div class="controls">
+      <input type="text" id="search" placeholder="Szukaj..." />
+      <button onclick="exportToXLSX()">📤 Eksport XLSX</button>
+      <input type="file" id="importFile" accept=".xlsx" />
+      <button onclick="exportToJSON()">📤 Eksport JSON</button>
+      <input type="file" id="importJson" accept=".json" />
+      <button onclick="toggleDarkMode()">🌗 Tryb ciemny</button>
+    </div>
+  </header>
 
-  <table id="gamesTable">
-    <thead>
-      <tr><th>Lp</th><th>Tytuł</th><th>Platforma</th><th>Rok</th><th>Akcje</th></tr>
-    </thead>
-    <tbody id="gameList"></tbody>
-  </table>
+  <main>
+    <table id="gamesTable">
+      <thead>
+        <tr>
+          <th onclick="sortTable('lp')">Lp</th>
+          <th onclick="sortTable('title')">Tytuł</th>
+          <th onclick="sortTable('platform')">Platforma</th>
+          <th onclick="sortTable('year')">Rok</th>
+          <th onclick="sortTable('rating')">Ocena</th>
+          <th onclick="sortTable('tag')">Oznaczenie</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody id="gameList"></tbody>
+    </table>
 
-  <h2 id="formTitle">Dodaj nową grę</h2>
-  <form id="gameForm">
-    <input type="text" id="title" placeholder="Tytuł" required><br>
-    <input type="text" id="platform" placeholder="Platforma" required><br>
-    <input type="number" id="year" placeholder="Rok" required><br>
-    <button type="submit">Zapisz</button>
-    <button type="button" id="cancelEdit" style="display: none;">Anuluj edycję</button>
-  </form>
+    <h2 id="formTitle">Dodaj nową grę</h2>
+    <form id="gameForm">
+      <input type="text" id="title" placeholder="Tytuł" required />
+      <input type="text" id="platform" placeholder="Platforma" required />
+      <input type="number" id="year" placeholder="Rok" required />
+      <input type="number" id="rating" placeholder="Ocena (1-10)" min="1" max="10" required />
+      <input type="text" id="tag" placeholder="Oznaczenie (np. Ulubiona)" />
+      <button type="submit">Zapisz</button>
+      <button type="button" id="cancelEdit" style="display: none;">Anuluj edycję</button>
+    </form>
 
-  <script>
-    const gameForm = document.getElementById('gameForm');
-    const gameList = document.getElementById('gameList');
-    const cancelEditBtn = document.getElementById('cancelEdit');
-    const formTitle = document.getElementById('formTitle');
+    <section id="stats">
+      <h3>Statystyki</h3>
+      <p id="gameCount"></p>
+      <p id="avgRating"></p>
+      <canvas id="chart" width="400" height="200"></canvas>
+    </section>
+  </main>
 
-    let games = JSON.parse(localStorage.getItem('games')) || [
-      { title: "The Legend of Zelda: Breath of the Wild", platform: "Nintendo Switch", year: 2017 },
-      { title: "God of War", platform: "PlayStation 4", year: 2018 },
-      { title: "Halo Infinite", platform: "Xbox Series X", year: 2021 }
-    ];
-
-    let editIndex = null;
-
-    function renderGames() {
-      gameList.innerHTML = '';
-      games.forEach((game, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${game.title}</td>
-          <td>${game.platform}</td>
-          <td>${game.year}</td>
-          <td class="actions">
-            <button onclick="editGame(${index})">Edytuj</button>
-            <button onclick="deleteGame(${index})">Usuń</button>
-          </td>
-        `;
-        gameList.appendChild(row);
-      });
-      localStorage.setItem('games', JSON.stringify(games));
-    }
-
-    function editGame(index) {
-      const game = games[index];
-      document.getElementById('title').value = game.title;
-      document.getElementById('platform').value = game.platform;
-      document.getElementById('year').value = game.year;
-      editIndex = index;
-      formTitle.textContent = 'Edytuj grę';
-      cancelEditBtn.style.display = 'inline';
-    }
-
-    function deleteGame(index) {
-      if (confirm("Czy na pewno chcesz usunąć tę grę?")) {
-        games.splice(index, 1);
-        renderGames();
-      }
-    }
-
-    cancelEditBtn.addEventListener('click', () => {
-      gameForm.reset();
-      editIndex = null;
-      formTitle.textContent = 'Dodaj nową grę';
-      cancelEditBtn.style.display = 'none';
-    });
-
-    gameForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const title = document.getElementById('title').value;
-      const platform = document.getElementById('platform').value;
-      const year = parseInt(document.getElementById('year').value);
-
-      if (editIndex !== null) {
-        games[editIndex] = { title, platform, year };
-        editIndex = null;
-        formTitle.textContent = 'Dodaj nową grę';
-        cancelEditBtn.style.display = 'none';
-      } else {
-        games.push({ title, platform, year });
-      }
-
-      gameForm.reset();
-      renderGames();
-    });
-
-    // Wyświetl na starcie
-    renderGames();
-
-    // Udostępnij edycję/usuwanie do globalnego zakresu
-    window.editGame = editGame;
-    window.deleteGame = deleteGame;
-  </script>
+  <script src="xlsx.full.min.js"></script>
+  <script src="Chart.min.js"></script>
+  <script src="app.js" type="module"></script>
 </body>
 </html>

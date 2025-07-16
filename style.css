@@ -1,0 +1,52 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f0f0f0;
+  transition: background 0.3s, color 0.3s;
+}
+body.dark-mode {
+  background: #121212;
+  color: #f0f0f0;
+}
+header {
+  text-align: center;
+}
+.logo {
+  width: 100px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+th, td {
+  padding: 8px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+th {
+  background-color: #444;
+  color: white;
+  cursor: pointer;
+}
+form {
+  margin-top: 30px;
+}
+input, button {
+  padding: 8px;
+  margin: 5px 0;
+}
+.actions button {
+  margin-right: 5px;
+}
+.controls {
+  margin-top: 10px;
+}
+@media (max-width: 600px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+  th, td {
+    text-align: right;
+  }
+}
